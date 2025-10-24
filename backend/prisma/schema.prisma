@@ -1,0 +1,99 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum BattleStatus {
+  WAITING
+  ONGOING
+  COMPLETED
+}
+
+model User {
+  id        String   @id @default(ulid())
+  username  String   @unique
+  email     String   @unique
+  password  String
+  rating    Int      @default(1000)
+  createdAt DateTime @default(now())
+
+  submissions  Submission[]
+  messages     Message[]
+  player1Rooms BattleRoom[] @relation("Player1Rooms")
+  player2Rooms BattleRoom[] @relation("Player2Rooms")
+  wonBattles   BattleRoom[] @relation("BattleWinner")
+
+  @@map("users")
+}
+
+model Problem {
+  id           String   @id @default(uuid())
+  title        String
+  description  String   @db.Text
+  sampleInput  String?
+  sampleOutput String?
+  difficulty   String
+  createdAt    DateTime @default(now())
+
+  battleRooms BattleRoom[]
+}
+
+model BattleRoom {
+  id        String       @id @default(uuid())
+  problemId String
+  player1Id String
+  player2Id String?
+  winnerId  String?
+  status    BattleStatus @default(WAITING)
+  createdAt DateTime     @default(now())
+
+  problem     Problem      @relation(fields: [problemId], references: [id])
+  player1     User         @relation("Player1Rooms", fields: [player1Id], references: [id])
+  player2     User?        @relation("Player2Rooms", fields: [player2Id], references: [id])
+  winner      User?        @relation("BattleWinner", fields: [winnerId], references: [id])
+  submissions Submission[]
+  messages    Message[]
+
+  @@map("battle_rooms")
+}
+
+model Submission {
+  id        String   @id @default(uuid())
+  code      String   @db.Text
+  language  String
+  output    String?  @db.Text
+  isCorrect Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  userId       String
+  battleRoomId String
+
+  user       User       @relation(fields: [userId], references: [id])
+  battleRoom BattleRoom @relation(fields: [battleRoomId], references: [id])
+
+  @@map("submissions")
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  userId       String
+  battleRoomId String
+
+  user       User       @relation(fields: [userId], references: [id])
+  battleRoom BattleRoom @relation(fields: [battleRoomId], references: [id])
+
+  @@map("messages")
+}
