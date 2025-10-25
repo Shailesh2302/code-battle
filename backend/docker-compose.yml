@@ -1,0 +1,32 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: code_battle
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      # application should read DATABASE_URL from env
+      DATABASE_URL: postgres://postgres:postgres@db:5432/code_battle
+    depends_on:
+      - db
+    ports:
+      - "3000:3000"
+    command: sh -c "pnpm prisma migrate deploy && node dist/index.js"
+    restart: on-failure
+
+volumes:
+  db-data:
