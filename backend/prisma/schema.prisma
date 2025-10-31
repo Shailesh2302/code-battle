@@ -23,6 +23,7 @@ model User {
   id        String   @id @default(ulid())
   username  String   @unique
   email     String   @unique
+  role      Roles
   password  String
   rating    Int      @default(1000)
   createdAt DateTime @default(now())
@@ -34,6 +35,10 @@ model User {
   wonBattles   BattleRoom[] @relation("BattleWinner")
 
   @@map("users")
+}
+enum Roles {
+  Admin
+  User
 }
 
 model Problem {
@@ -66,6 +71,7 @@ model BattleRoom {
 
   @@map("battle_rooms")
 }
+
 
 model Submission {
   id        String   @id @default(uuid())
